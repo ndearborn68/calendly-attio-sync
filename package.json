@@ -1,0 +1,22 @@
+{
+  "name": "calendly-attio-sync",
+  "version": "1.0.0",
+  "description": "Sync Calendly Notetaker call summaries to Attio CRM",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node test/test-webhook.js"
+  },
+  "keywords": ["calendly", "attio", "crm", "integration", "webhook"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "express": "^4.18.2",
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -93,6 +93,7 @@ async function createPerson(email, name, headers) {
           values: {
             email_addresses: [{ email_address: email }],
             name: [{
+              full_name: name,
               first_name: firstName,
               last_name: lastName
             }]
@@ -131,7 +132,8 @@ async function createNote(personId, summary, headers) {
           parent_object: 'people',
           parent_record_id: personId,
           title: title,
-          content_md: summary
+          format: 'markdown',
+          content: summary
         }
       },
       { headers }

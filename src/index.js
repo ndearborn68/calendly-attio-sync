@@ -49,17 +49,40 @@ app.post('/webhook/calendly', async (req, res) => {
   }
 });
 
-// Fathom AI webhook endpoint
+// Fathom AI webhook endpoint - generic (uses legacy keys)
 app.post('/webhook/fathom', async (req, res) => {
   try {
     // Acknowledge receipt immediately
     res.status(200).json({ received: true });
 
     // Process the webhook asynchronously
-    await handleFathomWebhook(req.body);
+    const signature = req.headers['webhook-signature'] || req.headers['x-fathom-signature'];
+    await handleFathomWebhook(req.body, null, signature, JSON.stringify(req.body));
 
   } catch (error) {
     log('error', 'Fathom webhook processing failed', { error: error.message });
+  }
+});
+
+// Fathom AI webhook endpoint - RecruitCloud account
+app.post('/webhook/fathom/recruitcloud', async (req, res) => {
+  try {
+    res.status(200).json({ received: true });
+    const signature = req.headers['webhook-signature'] || req.headers['x-fathom-signature'];
+    await handleFathomWebhook(req.body, 'recruitcloud', signature, JSON.stringify(req.body));
+  } catch (error) {
+    log('error', 'Fathom (RecruitCloud) webhook processing failed', { error: error.message });
+  }
+});
+
+// Fathom AI webhook endpoint - DataLabs Corp account
+app.post('/webhook/fathom/datalabs', async (req, res) => {
+  try {
+    res.status(200).json({ received: true });
+    const signature = req.headers['webhook-signature'] || req.headers['x-fathom-signature'];
+    await handleFathomWebhook(req.body, 'datalabs', signature, JSON.stringify(req.body));
+  } catch (error) {
+    log('error', 'Fathom (DataLabs) webhook processing failed', { error: error.message });
   }
 });
 
@@ -78,6 +101,8 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   log('info', `Server running on port ${PORT}`);
   log('info', `Calendly webhook: http://localhost:${PORT}/webhook/calendly`);
-  log('info', `Fathom webhook: http://localhost:${PORT}/webhook/fathom`);
+  log('info', `Fathom webhook (generic): http://localhost:${PORT}/webhook/fathom`);
+  log('info', `Fathom webhook (RecruitCloud): http://localhost:${PORT}/webhook/fathom/recruitcloud`);
+  log('info', `Fathom webhook (DataLabs): http://localhost:${PORT}/webhook/fathom/datalabs`);
   log('info', `Health check: http://localhost:${PORT}/health`);
 });

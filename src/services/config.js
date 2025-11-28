@@ -36,7 +36,20 @@ function getConfig() {
     attioApiKey: process.env.ATTIO_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY,
 
-    // API Keys - Additional sources (optional)
+    // Fathom accounts - multiple accounts supported
+    // Each account has its own API key and webhook secret
+    fathomAccounts: {
+      recruitcloud: {
+        apiKey: process.env.FATHOM_RECRUITCLOUD_API_KEY || null,
+        webhookSecret: process.env.FATHOM_RECRUITCLOUD_WEBHOOK_SECRET || null
+      },
+      datalabs: {
+        apiKey: process.env.FATHOM_DATALABS_API_KEY || null,
+        webhookSecret: process.env.FATHOM_DATALABS_WEBHOOK_SECRET || null
+      }
+    },
+
+    // Legacy single Fathom keys (for backwards compatibility)
     fathomApiKey: process.env.FATHOM_API_KEY || null,
     fathomWebhookSecret: process.env.FATHOM_WEBHOOK_SECRET || null,
 
@@ -62,4 +75,24 @@ function getConfig() {
   };
 }
 
-module.exports = { validateEnv, getConfig };
+/**
+ * Get Fathom config for a specific account
+ * @param {string} accountId - Account identifier (recruitcloud, datalabs)
+ * @returns {object} - { apiKey, webhookSecret }
+ */
+function getFathomAccountConfig(accountId) {
+  const config = getConfig();
+  const account = config.fathomAccounts[accountId];
+
+  if (account && account.apiKey) {
+    return account;
+  }
+
+  // Fall back to legacy single key
+  return {
+    apiKey: config.fathomApiKey,
+    webhookSecret: config.fathomWebhookSecret
+  };
+}
+
+module.exports = { validateEnv, getConfig, getFathomAccountConfig };

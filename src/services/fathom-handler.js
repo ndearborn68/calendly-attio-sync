@@ -3,9 +3,9 @@
  * Orchestrates the flow: Fathom → OpenAI → Attio
  */
 
-const { getConfig } = require('./config');
+const { getConfig, getFathomAccountConfig } = require('./config');
 const { log } = require('./logger');
-const { processFathomWebhook } = require('./fathom');
+const { processFathomWebhook, verifyFathomWebhook } = require('./fathom');
 const { generateSummary } = require('./openai');
 const { upsertPersonAndNote } = require('./attio');
 const { sendSlackError } = require('./slack');
@@ -13,20 +13,33 @@ const { sendSlackError } = require('./slack');
 /**
  * Handle incoming Fathom webhook
  * @param {object} payload - Webhook payload from Fathom
+ * @param {string} accountId - Account identifier (recruitcloud, datalabs)
+ * @param {string} signature - Webhook signature header (optional)
+ * @param {string} rawBody - Raw request body for signature verification
  */
-async function handleFathomWebhook(payload) {
+async function handleFathomWebhook(payload, accountId = null, signature = null, rawBody = null) {
   const config = getConfig();
+  const fathomConfig = getFathomAccountConfig(accountId);
   let currentStep = 'parse_payload';
 
   try {
     log('info', 'Processing Fathom webhook', {
       type: payload.event || payload.type,
-      meetingId: payload.meeting_id || payload.id
+      meetingId: payload.meeting_id || payload.id,
+      account: accountId || 'default'
     });
+
+    // Verify webhook signature if configured
+    if (signature && fathomConfig.webhookSecret) {
+      const isValid = verifyFathomWebhook(signature, rawBody, fathomConfig.webhookSecret);
+      if (!isValid) {
+        throw new Error('Invalid Fathom webhook signature');
+      }
+    }
 
     // Step 1: Process Fathom webhook and extract data
     currentStep = 'process_fathom';
-    const meetingData = await processFathomWebhook(payload, config);
+    const meetingData = await processFathomWebhook(payload, fathomConfig);
 
     log('info', 'Fathom data extracted', {
       guestEmail: meetingData.guestEmail,
@@ -54,7 +67,8 @@ async function handleFathomWebhook(payload) {
       personId: result.personId,
       noteId: result.noteId,
       guestEmail: meetingData.guestEmail,
-      source: 'fathom'
+      source: 'fathom',
+      account: accountId || 'default'
     });
 
     return result;

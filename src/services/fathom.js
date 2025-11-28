@@ -13,10 +13,10 @@ const FATHOM_API_BASE = 'https://api.fathom.ai/external/v1';
  * Process Fathom webhook payload
  * Fathom sends meeting data including transcript when configured
  * @param {object} payload - Webhook payload from Fathom
- * @param {object} config - Configuration object
+ * @param {object} fathomConfig - Fathom account config { apiKey, webhookSecret }
  * @returns {object} - { transcript, guestEmail, guestName }
  */
-async function processFathomWebhook(payload, config) {
+async function processFathomWebhook(payload, fathomConfig) {
   log('info', 'Processing Fathom webhook', {
     meetingId: payload.meeting_id || payload.id
   });
@@ -26,7 +26,7 @@ async function processFathomWebhook(payload, config) {
 
   // If transcript not in payload, fetch it via API
   if (!transcript && payload.recording_id) {
-    transcript = await fetchFathomTranscript(payload.recording_id, config);
+    transcript = await fetchFathomTranscript(payload.recording_id, fathomConfig);
   }
 
   // Extract attendee info
@@ -69,10 +69,10 @@ async function processFathomWebhook(payload, config) {
 /**
  * Fetch transcript from Fathom API
  * @param {string} recordingId - The recording ID
- * @param {object} config - Configuration object
+ * @param {object} fathomConfig - Fathom account config { apiKey, webhookSecret }
  * @returns {string} - Transcript text
  */
-async function fetchFathomTranscript(recordingId, config) {
+async function fetchFathomTranscript(recordingId, fathomConfig) {
   log('info', 'Fetching transcript from Fathom API', { recordingId });
 
   try {
@@ -80,7 +80,7 @@ async function fetchFathomTranscript(recordingId, config) {
       `${FATHOM_API_BASE}/recordings/${recordingId}/transcript`,
       {
         headers: {
-          'X-Api-Key': config.fathomApiKey
+          'X-Api-Key': fathomConfig.apiKey
         }
       }
     );

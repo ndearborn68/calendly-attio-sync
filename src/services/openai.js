@@ -21,18 +21,32 @@ async function generateSummary(transcript, config) {
     ? transcript.substring(0, maxTranscriptLength) + '\n\n[Transcript truncated]'
     : transcript;
 
-  const systemPrompt = `You are a concise meeting summarizer. Output valid Markdown with exactly three headings. Keep total response under 150 words. Be specific and actionable.`;
+  const systemPrompt = `You are an expert sales call analyzer and meeting summarizer. Your job is to create comprehensive, detailed meeting notes that capture all important information from the call. Output valid Markdown. Be thorough and specific - include names, numbers, dates, and specific details mentioned.`;
 
-  const userPrompt = `Summarize this call transcript into three sections:
+  const userPrompt = `Create a detailed summary of this sales/business call. Include ALL relevant information discussed:
 
-## Key Topics
-(3-5 bullet points of main discussion items)
+## Meeting Overview
+(Who was on the call, what company they represent, and the purpose of the meeting)
 
-## Action Items
-(Specific next steps with owners if mentioned)
+## Key Discussion Points
+(Detailed bullet points covering ALL major topics discussed - include specific numbers, pain points, challenges, and context shared)
 
-## Sentiment
-(One sentence: positive/neutral/negative + brief reason)
+## Prospect/Client Background
+(What did we learn about their business, current situation, challenges, budget, team size, tools they use, etc.)
+
+## Interest & Objections
+(What are they interested in? What concerns or objections did they raise? Price sensitivity?)
+
+## Action Items & Next Steps
+(Specific follow-ups needed, who owns each action, any timelines mentioned)
+
+## Sales Intelligence
+(Deal potential, likelihood to close, recommended follow-up timing, key leverage points)
+
+## Sentiment & Relationship
+(Overall tone of the call, rapport level, buying signals or red flags)
+
+Be thorough - this summary will be used as the primary record of this conversation.
 
 TRANSCRIPT:
 ${truncatedTranscript}`;

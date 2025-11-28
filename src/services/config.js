@@ -51,7 +51,7 @@ function getConfig() {
     openai: {
       model: 'gpt-4o',
       temperature: 0.3,
-      maxTokens: 400
+      maxTokens: 1500
     }
   };
 }

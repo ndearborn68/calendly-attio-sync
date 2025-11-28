@@ -44,13 +44,12 @@ async function upsertPersonAndNote(email, name, summary, config) {
  */
 async function findPersonByEmail(email, headers) {
   try {
+    // Use the correct Attio filter format for email addresses
     const response = await axios.post(
       `${ATTIO_BASE_URL}/objects/people/records/query`,
       {
         filter: {
-          email_addresses: {
-            contains: email
-          }
+          email_addresses: email
         }
       },
       { headers }
@@ -64,8 +63,9 @@ async function findPersonByEmail(email, headers) {
     return null;
 
   } catch (error) {
-    // 404 means no results, which is fine
-    if (error.response?.status === 404) {
+    // 404 or 400 means no results, which is fine - create new person
+    if (error.response?.status === 404 || error.response?.status === 400) {
+      log('info', 'No existing person found', { email });
       return null;
     }
     log('error', 'Attio search error', {

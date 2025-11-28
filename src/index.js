@@ -1,12 +1,14 @@
 /**
- * Calendly → Attio CRM Integration
- * Main entry point - Express server that receives Calendly webhooks
+ * Meeting Notetaker → Attio CRM Integration
+ * Main entry point - Express server that receives webhooks from multiple sources
+ * Supported: Calendly Notetaker, Fathom AI
  */
 require('dotenv').config();
 
 const express = require('express');
 const { validateEnv } = require('./services/config');
 const { handleCalendlyWebhook } = require('./services/webhook-handler');
+const { handleFathomWebhook } = require('./services/fathom-handler');
 const { log } = require('./services/logger');
 
 // Validate environment variables on startup
@@ -33,7 +35,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Main webhook endpoint - Calendly sends POST requests here
+// Calendly webhook endpoint
 app.post('/webhook/calendly', async (req, res) => {
   try {
     // Acknowledge receipt immediately (Calendly expects fast response)
@@ -43,8 +45,21 @@ app.post('/webhook/calendly', async (req, res) => {
     await handleCalendlyWebhook(req.body);
 
   } catch (error) {
-    log('error', 'Webhook processing failed', { error: error.message });
-    // Already sent 200, so we just log the error
+    log('error', 'Calendly webhook processing failed', { error: error.message });
+  }
+});
+
+// Fathom AI webhook endpoint
+app.post('/webhook/fathom', async (req, res) => {
+  try {
+    // Acknowledge receipt immediately
+    res.status(200).json({ received: true });
+
+    // Process the webhook asynchronously
+    await handleFathomWebhook(req.body);
+
+  } catch (error) {
+    log('error', 'Fathom webhook processing failed', { error: error.message });
   }
 });
 
@@ -62,6 +77,7 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(PORT, () => {
   log('info', `Server running on port ${PORT}`);
-  log('info', `Webhook URL: http://localhost:${PORT}/webhook/calendly`);
+  log('info', `Calendly webhook: http://localhost:${PORT}/webhook/calendly`);
+  log('info', `Fathom webhook: http://localhost:${PORT}/webhook/fathom`);
   log('info', `Health check: http://localhost:${PORT}/health`);
 });

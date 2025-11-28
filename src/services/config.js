@@ -31,10 +31,16 @@ function validateEnv() {
  */
 function getConfig() {
   return {
-    // API Keys
+    // API Keys - Core (required)
     calendlyPat: process.env.CALENDLY_PAT,
     attioApiKey: process.env.ATTIO_API_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY,
+
+    // API Keys - Additional sources (optional)
+    fathomApiKey: process.env.FATHOM_API_KEY || null,
+    fathomWebhookSecret: process.env.FATHOM_WEBHOOK_SECRET || null,
+
+    // Notifications (optional)
     slackWebhookUrl: process.env.SLACK_WEBHOOK_URL || null,
 
     // Server settings

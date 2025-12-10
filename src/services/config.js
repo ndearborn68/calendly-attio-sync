@@ -3,11 +3,15 @@
  * Fails fast if required variables are missing
  */
 
+// Only Attio is required - other keys are optional depending on which features you use
 const REQUIRED_ENV_VARS = [
-  'CALENDLY_PAT',
-  'ATTIO_API_KEY',
-  'OPENAI_API_KEY'
+  'ATTIO_API_KEY'
 ];
+
+// Optional features:
+// - CALENDLY_PAT + OPENAI_API_KEY: For Calendly meeting transcript summaries
+// - FATHOM_API_KEY: For Fathom AI transcript integration
+// - HeyReach + Clay: No additional keys needed (just Attio)
 
 /**
  * Validate that all required environment variables are set

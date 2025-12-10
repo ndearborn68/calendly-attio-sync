@@ -9,6 +9,7 @@ const { pollForTranscript } = require('./calendly');
 const { generateSummary } = require('./openai');
 const { upsertPersonAndNote } = require('./attio');
 const { sendSlackError } = require('./slack');
+const { addBooking } = require('./meeting-store');
 
 /**
  * Handle incoming Calendly webhook
@@ -34,12 +35,36 @@ async function handleCalendlyWebhook(payload) {
     const guestEmail = eventData.email;
     const guestName = eventData.name || '';
     const endTime = new Date(eventData.scheduled_event?.end_time);
+    const startTime = new Date(eventData.scheduled_event?.start_time);
+    const location = eventData.scheduled_event?.location || {};
+    const meetingUrl =
+      location.join_url ||
+      location.url ||
+      location.location ||
+      location.data?.join_url ||
+      location.data?.url ||
+      null;
+    const hostEmail =
+      (eventData.scheduled_event?.event_memberships || [])
+        .map(m => m.user?.email || m.email)
+        .find(Boolean) || null;
 
     if (!eventUuid || !guestEmail) {
       throw new Error('Missing required fields: eventUuid or guestEmail');
     }
 
     log('info', 'Parsed webhook data', { eventUuid, guestEmail, endTime });
+
+    // Store booking context for later Fathom correlation
+    addBooking({
+      eventUuid,
+      meetingUrl,
+      startTime: startTime?.toISOString(),
+      endTime: endTime?.toISOString(),
+      guestEmail,
+      guestName,
+      hostEmail
+    });
 
     // Step 2: Wait for meeting to end (if not already)
     currentStep = 'wait_for_meeting';

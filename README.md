@@ -1,9 +1,10 @@
 # Calendly → Attio CRM Integration
 
-Automatically sync AI-generated call summaries from Calendly Notetaker to Attio CRM.
+Automatically sync AI-generated call summaries from Calendly Notetaker to Attio CRM, plus HeyReach conversations with Clay enrichment.
 
 ## How It Works
 
+### Calendly Flow
 ```
 Calendly Meeting Ends
         ↓
@@ -16,6 +17,21 @@ Calendly Meeting Ends
   Find/Create Person in Attio
         ↓
   Add Note to Person Record
+```
+
+### HeyReach + Clay Flow
+```
+Lead Tagged "Interested" in HeyReach
+        ↓
+  Webhook captures lead + conversation
+        ↓
+  Lead added to Attio via Chrome extension
+        ↓
+  Clay enriches lead (email, phone)
+        ↓
+  Clay webhook updates Attio person
+        ↓
+  Conversation note added to Attio
 ```
 
 ## Quick Start
@@ -157,6 +173,30 @@ npm start
 npm test
 ```
 
+## Webhook Endpoints
+
+| Endpoint | Source | Description |
+|----------|--------|-------------|
+| `POST /webhook/calendly` | Calendly | Meeting booking notifications |
+| `POST /webhook/fathom` | Fathom AI | Call recording transcripts |
+| `POST /webhook/heyreach` | HeyReach | Lead tagged as "interested" |
+| `POST /webhook/clay` | Clay | Enriched lead data (email/phone) |
+| `GET /health` | - | Health check |
+
+### Setting up HeyReach + Clay
+
+1. **HeyReach Webhook**: Configure HeyReach to send a webhook when a lead is tagged "interested"
+   - URL: `https://YOUR_SERVER/webhook/heyreach`
+   - Include: LinkedIn URL, lead name, conversation messages
+
+2. **Clay Webhook**: In your Clay table, add a webhook action that fires after enrichment
+   - URL: `https://YOUR_SERVER/webhook/clay`
+   - Include: LinkedIn URL, enriched email, enriched phone
+
+3. **Attio Chrome Extension**: Add leads to Attio using the Chrome extension from their LinkedIn profile
+
+The integration matches leads by LinkedIn URL and updates the Attio person with enriched data.
+
 ## Project Structure
 
 ```
@@ -165,13 +205,17 @@ npm test
 │   └── services/
 │       ├── config.js         # Environment validation
 │       ├── logger.js         # Structured JSON logging
-│       ├── webhook-handler.js # Main orchestration
+│       ├── webhook-handler.js # Calendly orchestration
 │       ├── calendly.js       # Calendly API calls
 │       ├── openai.js         # GPT-4o summary generation
 │       ├── attio.js          # Attio CRM operations
-│       └── slack.js          # Error notifications
+│       ├── slack.js          # Error notifications
+│       ├── heyreach-handler.js # HeyReach webhook handler
+│       ├── heyreach-store.js # Pending lead storage
+│       └── clay-handler.js   # Clay enrichment handler
 ├── test/
-│   └── test-webhook.js       # Manual testing script
+│   ├── test-webhook.js       # Calendly test script
+│   └── test-heyreach-clay.js # HeyReach+Clay test script
 ├── .env.example              # Environment template
 ├── .gitignore
 ├── package.json

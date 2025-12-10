@@ -9,6 +9,7 @@ const { processFathomWebhook, verifyFathomWebhook } = require('./fathom');
 const { generateSummary } = require('./openai');
 const { upsertPersonAndNote } = require('./attio');
 const { sendSlackError } = require('./slack');
+const { findMatch } = require('./meeting-store');
 
 /**
  * Handle incoming Fathom webhook
@@ -51,6 +52,20 @@ async function handleFathomWebhook(payload, accountId = null, signature = null, 
     log('info', 'Generating AI summary...');
     const summary = await generateSummary(meetingData.transcript, config);
 
+    // Correlate with Calendly booking (best-effort)
+    const matched = findMatch({
+      meetingUrl: meetingData.meetingUrl,
+      guestEmail: meetingData.guestEmail,
+      hostEmail: meetingData.hostEmail,
+      startTime: meetingData.startTime
+    });
+
+    const correlationNote = matched
+      ? `Matched Calendly event: ${matched.eventUuid}\nMeeting URL: ${matched.meetingUrl || 'n/a'}\nStart: ${matched.startTime || 'n/a'}`
+      : 'No Calendly match found';
+
+    const summaryWithContext = `${summary}\n\n---\n${correlationNote}`;
+
     log('info', 'Summary generated', { length: summary.length });
 
     // Step 3: Upsert to Attio
@@ -59,7 +74,7 @@ async function handleFathomWebhook(payload, accountId = null, signature = null, 
     const result = await upsertPersonAndNote(
       meetingData.guestEmail,
       meetingData.guestName,
-      summary,
+      summaryWithContext,
       config
     );
 

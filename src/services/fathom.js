@@ -62,7 +62,11 @@ async function processFathomWebhook(payload, fathomConfig) {
     guestEmail,
     guestName,
     source: 'fathom',
-    meetingTitle: payload.title || payload.meeting_title || 'Fathom Meeting'
+    meetingTitle: payload.title || payload.meeting_title || 'Fathom Meeting',
+    meetingUrl: payload.meeting_url || payload.meeting_join_url || payload.url || null,
+    startTime: payload.start_time || payload.meeting_start_time || null,
+    endTime: payload.end_time || payload.meeting_end_time || null,
+    hostEmail: payload.host_email || payload.recorded_by || null
   };
 }
 

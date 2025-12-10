@@ -9,6 +9,8 @@ const express = require('express');
 const { validateEnv } = require('./services/config');
 const { handleCalendlyWebhook } = require('./services/webhook-handler');
 const { handleFathomWebhook } = require('./services/fathom-handler');
+const { handleHeyReachWebhook } = require('./services/heyreach-handler');
+const { handleClayWebhook } = require('./services/clay-handler');
 const { log } = require('./services/logger');
 
 // Validate environment variables on startup
@@ -86,6 +88,34 @@ app.post('/webhook/fathom/datalabs', async (req, res) => {
   }
 });
 
+// HeyReach webhook endpoint - triggered when lead is tagged as "interested"
+app.post('/webhook/heyreach', async (req, res) => {
+  try {
+    // Acknowledge receipt immediately
+    res.status(200).json({ received: true });
+
+    // Process the webhook asynchronously
+    await handleHeyReachWebhook(req.body);
+
+  } catch (error) {
+    log('error', 'HeyReach webhook processing failed', { error: error.message });
+  }
+});
+
+// Clay enrichment webhook endpoint - receives enriched lead data
+app.post('/webhook/clay', async (req, res) => {
+  try {
+    // Acknowledge receipt immediately
+    res.status(200).json({ received: true });
+
+    // Process the webhook asynchronously
+    await handleClayWebhook(req.body);
+
+  } catch (error) {
+    log('error', 'Clay webhook processing failed', { error: error.message });
+  }
+});
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
@@ -104,5 +134,7 @@ app.listen(PORT, () => {
   log('info', `Fathom webhook (generic): http://localhost:${PORT}/webhook/fathom`);
   log('info', `Fathom webhook (RecruitCloud): http://localhost:${PORT}/webhook/fathom/recruitcloud`);
   log('info', `Fathom webhook (DataLabs): http://localhost:${PORT}/webhook/fathom/datalabs`);
+  log('info', `HeyReach webhook: http://localhost:${PORT}/webhook/heyreach`);
+  log('info', `Clay enrichment webhook: http://localhost:${PORT}/webhook/clay`);
   log('info', `Health check: http://localhost:${PORT}/health`);
 });

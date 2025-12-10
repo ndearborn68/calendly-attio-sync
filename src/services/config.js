@@ -53,6 +53,12 @@ function getConfig() {
     fathomApiKey: process.env.FATHOM_API_KEY || null,
     fathomWebhookSecret: process.env.FATHOM_WEBHOOK_SECRET || null,
 
+    // HeyReach integration (optional webhook secret for verification)
+    heyreachWebhookSecret: process.env.HEYREACH_WEBHOOK_SECRET || null,
+
+    // Clay enrichment integration (optional webhook secret for verification)
+    clayWebhookSecret: process.env.CLAY_WEBHOOK_SECRET || null,
+
     // Notifications (optional)
     slackWebhookUrl: process.env.SLACK_WEBHOOK_URL || null,
 

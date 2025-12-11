@@ -165,39 +165,52 @@ async function findPersonByLinkedIn(linkedinUrl, config) {
     'Content-Type': 'application/json'
   };
 
-  try {
-    // Attio stores LinkedIn URLs in the linkedin attribute
-    const response = await axios.post(
-      `${ATTIO_BASE_URL}/objects/people/records/query`,
-      {
-        filter: {
-          linkedin: linkedinUrl
-        }
-      },
-      { headers }
-    );
+  // Try multiple URL formats since Attio might store it differently
+  const urlVariants = [
+    linkedinUrl,
+    linkedinUrl + '/',
+    linkedinUrl.replace('https://www.', 'https://'),
+    linkedinUrl.replace('https://', 'https://www.'),
+  ].filter((v, i, arr) => arr.indexOf(v) === i); // dedupe
 
-    const records = response.data.data;
-    if (records && records.length > 0) {
-      const personId = records[0].id.record_id;
-      log('info', 'Found person by LinkedIn URL', { personId, linkedinUrl });
-      return personId;
+  for (const urlVariant of urlVariants) {
+    try {
+      log('info', 'Trying LinkedIn URL variant', { urlVariant });
+      
+      const response = await axios.post(
+        `${ATTIO_BASE_URL}/objects/people/records/query`,
+        {
+          filter: {
+            linkedin: urlVariant
+          }
+        },
+        { headers }
+      );
+
+      const records = response.data.data;
+      if (records && records.length > 0) {
+        const personId = records[0].id.record_id;
+        log('info', 'Found person by LinkedIn URL', { personId, linkedinUrl: urlVariant });
+        return personId;
+      }
+
+    } catch (error) {
+      // 404 or 400 means no results, try next variant
+      if (error.response?.status === 404 || error.response?.status === 400) {
+        log('info', 'No match for LinkedIn URL variant', { urlVariant });
+        continue;
+      }
+      log('error', 'Attio LinkedIn search error', {
+        status: error.response?.status,
+        message: error.message,
+        data: error.response?.data
+      });
+      throw error;
     }
-
-    return null;
-
-  } catch (error) {
-    // 404 or 400 means no results
-    if (error.response?.status === 404 || error.response?.status === 400) {
-      log('info', 'No person found by LinkedIn URL', { linkedinUrl });
-      return null;
-    }
-    log('error', 'Attio LinkedIn search error', {
-      status: error.response?.status,
-      message: error.message
-    });
-    throw error;
   }
+
+  log('info', 'No person found for any LinkedIn URL variant', { linkedinUrl, triedVariants: urlVariants });
+  return null;
 }
 
 /**

@@ -36,11 +36,16 @@ async function handleClayWebhook(payload) {
     }
 
     // Find the corresponding Attio person by LinkedIn URL
+    log('info', 'Searching for Attio person by LinkedIn URL', { 
+      linkedinUrl: enrichedData.linkedinUrl 
+    });
+    
     let personId = await findPersonByLinkedIn(enrichedData.linkedinUrl, config);
     
     if (!personId) {
-      log('warn', 'No Attio person found for LinkedIn URL', { 
-        linkedinUrl: enrichedData.linkedinUrl 
+      log('warn', 'No Attio person found for LinkedIn URL - person may not exist or LinkedIn URL format mismatch', { 
+        linkedinUrl: enrichedData.linkedinUrl,
+        tip: 'Check if LinkedIn URL in Attio matches exactly'
       });
       // The person should have been added via Chrome extension
       // Log but don't fail - they may add it later
@@ -50,6 +55,8 @@ async function handleClayWebhook(payload) {
         linkedinUrl: enrichedData.linkedinUrl
       };
     }
+    
+    log('info', 'Found Attio person, proceeding with update', { personId });
 
     // Update the person with enriched email and phone
     const updateResult = await updatePersonFields(personId, {

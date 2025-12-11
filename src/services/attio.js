@@ -239,7 +239,8 @@ async function updatePersonFields(personId, fields, config) {
     // Only add if it looks like a valid phone (has digits, not just "N/A" or empty)
     const hasDigits = /\d{7,}/.test(cleanPhone.replace(/\D/g, ''));
     if (hasDigits) {
-      values.phone_numbers = [{ original_phone_number: cleanPhone }];
+      // Attio expects just the phone string in an array
+      values.phone_numbers = [cleanPhone];
       console.log('PHONE DEBUG: Adding phone number:', cleanPhone);
     } else {
       console.log('PHONE DEBUG: Skipping invalid phone:', cleanPhone);

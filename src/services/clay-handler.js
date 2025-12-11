@@ -27,8 +27,7 @@ async function handleClayWebhook(payload) {
     log('info', 'Processing Clay enrichment webhook', {
       linkedinUrl: enrichedData.linkedinUrl,
       hasEmail: !!enrichedData.email,
-      hasPhone: !!enrichedData.phone,
-      phoneValue: enrichedData.phone // Log actual phone value
+      hasPhone: !!enrichedData.phone
     });
     
     if (!enrichedData.linkedinUrl) {

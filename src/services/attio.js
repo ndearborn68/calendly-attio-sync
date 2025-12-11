@@ -215,10 +215,11 @@ async function findPersonByLinkedIn(linkedinUrl, config) {
 
 /**
  * Update a person's email and phone fields
+ * Updates each field separately so one failure doesn't block the other
  * @param {string} personId - Attio person record ID
  * @param {object} fields - Fields to update { email, phone }
  * @param {object} config - Configuration object
- * @returns {boolean} - Success status
+ * @returns {object} - { emailUpdated, phoneUpdated }
  */
 async function updatePersonFields(personId, fields, config) {
   const headers = {
@@ -226,63 +227,64 @@ async function updatePersonFields(personId, fields, config) {
     'Content-Type': 'application/json'
   };
 
-  const values = {};
+  const results = { emailUpdated: false, phoneUpdated: false };
 
-  // Add email if provided
+  // Update email if provided (separate call to handle uniqueness conflicts)
   if (fields.email) {
-    values.email_addresses = [{ email_address: fields.email }];
-  }
-
-  // Add phone if provided - validate it's a real phone number
-  if (fields.phone) {
-    const cleanPhone = fields.phone.toString().trim();
-    // Only add if it looks like a valid phone (has digits, not just "N/A" or empty)
-    const hasDigits = /\d{7,}/.test(cleanPhone.replace(/\D/g, ''));
-    if (hasDigits) {
-      // Attio expects just the phone string in an array
-      values.phone_numbers = [cleanPhone];
-      console.log('PHONE DEBUG: Adding phone number:', cleanPhone);
-    } else {
-      console.log('PHONE DEBUG: Skipping invalid phone:', cleanPhone);
+    try {
+      await axios.patch(
+        `${ATTIO_BASE_URL}/objects/people/records/${personId}`,
+        { data: { values: { email_addresses: [{ email_address: fields.email }] } } },
+        { headers }
+      );
+      results.emailUpdated = true;
+      log('info', 'Updated email', { personId, email: fields.email });
+    } catch (error) {
+      const errorCode = error.response?.data?.code;
+      if (errorCode === 'uniqueness_conflict') {
+        log('warn', 'Email already exists on another record, skipping', { 
+          personId, 
+          email: fields.email 
+        });
+      } else {
+        log('error', 'Failed to update email', { 
+          personId, 
+          error: error.message,
+          errorBody: error.response?.data 
+        });
+      }
     }
   }
 
-  // Skip if nothing to update
-  if (Object.keys(values).length === 0) {
-    log('info', 'No fields to update', { personId });
-    return true;
+  // Update phone if provided - validate it's a real phone number
+  if (fields.phone) {
+    const cleanPhone = fields.phone.toString().trim();
+    const hasDigits = /\d{7,}/.test(cleanPhone.replace(/\D/g, ''));
+    
+    if (hasDigits) {
+      try {
+        await axios.patch(
+          `${ATTIO_BASE_URL}/objects/people/records/${personId}`,
+          { data: { values: { phone_numbers: [cleanPhone] } } },
+          { headers }
+        );
+        results.phoneUpdated = true;
+        log('info', 'Updated phone', { personId, phone: cleanPhone });
+      } catch (error) {
+        log('error', 'Failed to update phone', { 
+          personId, 
+          phone: cleanPhone,
+          error: error.message,
+          errorBody: error.response?.data 
+        });
+      }
+    } else {
+      log('info', 'Skipping invalid phone number', { personId, phone: cleanPhone });
+    }
   }
 
-  try {
-    await axios.patch(
-      `${ATTIO_BASE_URL}/objects/people/records/${personId}`,
-      {
-        data: {
-          values
-        }
-      },
-      { headers }
-    );
-
-    log('info', 'Updated person fields', { 
-      personId, 
-      hasEmail: !!fields.email, 
-      hasPhone: !!fields.phone 
-    });
-    return true;
-
-  } catch (error) {
-    // Log the full error details
-    console.error('ATTIO UPDATE ERROR:', {
-      personId,
-      status: error.response?.status,
-      message: error.message,
-      errorBody: error.response?.data,
-      attemptedValues: values
-    });
-    log('error', error.message);
-    throw error;
-  }
+  log('info', 'Update complete', { personId, ...results });
+  return results;
 }
 
 /**

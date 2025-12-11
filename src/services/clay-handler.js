@@ -65,10 +65,10 @@ async function handleClayWebhook(payload) {
       phone: enrichedData.phone
     }, config);
 
-    log('info', 'Updated Attio person with enriched data', {
+    log('info', 'Attio person update complete', {
       personId,
-      email: enrichedData.email,
-      phone: enrichedData.phone
+      emailUpdated: updateResult.emailUpdated,
+      phoneUpdated: updateResult.phoneUpdated
     });
 
     // Check if we have a pending lead with conversation to add

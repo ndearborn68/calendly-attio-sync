@@ -27,7 +27,8 @@ async function handleClayWebhook(payload) {
     log('info', 'Processing Clay enrichment webhook', {
       linkedinUrl: enrichedData.linkedinUrl,
       hasEmail: !!enrichedData.email,
-      hasPhone: !!enrichedData.phone
+      hasPhone: !!enrichedData.phone,
+      phoneValue: enrichedData.phone // Log actual phone value
     });
     
     if (!enrichedData.linkedinUrl) {
@@ -146,8 +147,10 @@ function extractClayData(payload) {
     data.mobile ||
     data.Mobile ||
     data['Phone Number'] ||
+    data['Mobile Number'] ||  // User's Clay column name
     data['Mobile Phone'] ||
     data.direct_phone ||
+    data['Phone Clean'] ||    // User's formula column
     null;
 
   // Extract name info (in case we need to create person)

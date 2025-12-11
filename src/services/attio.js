@@ -233,10 +233,17 @@ async function updatePersonFields(personId, fields, config) {
     values.email_addresses = [{ email_address: fields.email }];
   }
 
-  // Add phone if provided
+  // Add phone if provided - validate it's a real phone number
   if (fields.phone) {
-    // Attio expects original_phone_number for the raw input
-    values.phone_numbers = [{ original_phone_number: fields.phone }];
+    const cleanPhone = fields.phone.toString().trim();
+    // Only add if it looks like a valid phone (has digits, not just "N/A" or empty)
+    const hasDigits = /\d{7,}/.test(cleanPhone.replace(/\D/g, ''));
+    if (hasDigits) {
+      values.phone_numbers = [{ original_phone_number: cleanPhone }];
+      console.log('PHONE DEBUG: Adding phone number:', cleanPhone);
+    } else {
+      console.log('PHONE DEBUG: Skipping invalid phone:', cleanPhone);
+    }
   }
 
   // Skip if nothing to update

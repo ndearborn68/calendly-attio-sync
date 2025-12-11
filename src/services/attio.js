@@ -267,7 +267,8 @@ async function updatePersonFields(personId, fields, config) {
       personId,
       status: error.response?.status,
       message: error.message,
-      data: error.response?.data
+      errorData: JSON.stringify(error.response?.data),
+      attemptedValues: JSON.stringify(values)
     });
     throw error;
   }

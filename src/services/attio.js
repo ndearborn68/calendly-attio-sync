@@ -235,7 +235,8 @@ async function updatePersonFields(personId, fields, config) {
 
   // Add phone if provided
   if (fields.phone) {
-    values.phone_numbers = [{ phone_number: fields.phone }];
+    // Attio expects original_phone_number for the raw input
+    values.phone_numbers = [{ original_phone_number: fields.phone }];
   }
 
   // Skip if nothing to update
@@ -263,13 +264,15 @@ async function updatePersonFields(personId, fields, config) {
     return true;
 
   } catch (error) {
-    log('error', 'Attio update person error', {
+    // Log the full error details
+    console.error('ATTIO UPDATE ERROR:', {
       personId,
       status: error.response?.status,
       message: error.message,
-      errorData: JSON.stringify(error.response?.data),
-      attemptedValues: JSON.stringify(values)
+      errorBody: error.response?.data,
+      attemptedValues: values
     });
+    log('error', error.message);
     throw error;
   }
 }
